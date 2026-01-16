@@ -1,0 +1,41 @@
+{
+	"manifest_version": 2.0,
+	"id": "ticket-platform",
+	"name": "Ticket Platform",
+	"namespace": "TicketPlatform",
+	"version": "1.0",
+	"author": "Zabbix",
+	"description": "Centralized problems view across multiple Zabbix servers.",
+	"actions": {
+		"ticket.platform": {
+			"class": "TicketPlatform",
+			"view": "ticket.platform.view"
+		},
+		"ticket.platform.settings": {
+			"class": "TicketPlatformSettings",
+			"view": "ticket.platform.settings"
+		},
+		"ticket.platform.settings.edit": {
+			"class": "TicketPlatformSettingsEdit",
+			"view": "ticket.platform.settings.edit"
+		},
+		"ticket.platform.ack.edit": {
+			"class": "TicketPlatformAcknowledgeEdit",
+			"view": "ticket.platform.ack.edit",
+			"layout": "layout.json"
+		},
+		"ticket.platform.ack.create": {
+			"class": "TicketPlatformAcknowledgeCreate",
+			"layout": "layout.json"
+		},
+		"ticket.platform.actionlist": {
+			"class": "TicketPlatformActionlist",
+			"view": "ticket.platform.actionlist",
+			"layout": "layout.json"
+		},
+		"ticket.platform.eventdetails": {
+			"class": "TicketPlatformEventDetails",
+			"view": "ticket.platform.eventdetails"
+		}
+	}
+}
