@@ -224,6 +224,7 @@ $table_header = [
 	_('Time'),
 	_('Severity'),
 	_('Status'),
+	_('Recovery time'),
 	_('Origin server'),
 	_('Host'),
 	_('Problem'),
@@ -234,7 +235,7 @@ $table_header = [
 ];
 
 if ($filter['show_tags'] != SHOW_TAGS_NONE) {
-	array_splice($table_header, 10, 0, [_('Tags')]);
+	array_splice($table_header, count($table_header), 0, [_('Tags')]);
 }
 
 $problems_table = (new CTableInfo())
@@ -267,6 +268,11 @@ foreach ($problems as $problem) {
 	$status = (new CSpan($problem['r_eventid'] ? _('RESOLVED') : _('PROBLEM')))->addClass(
 		$problem['r_eventid'] ? ZBX_STYLE_GREEN : ZBX_STYLE_RED
 	);
+
+	$recovery_time = '';
+	if (!empty($problem['r_eventid']) && !empty($problem['r_clock'])) {
+		$recovery_time = zbx_date2str(DATE_TIME_FORMAT_SECONDS, $problem['r_clock']);
+	}
 
 	$host_list = '';
 	if ($problem['hosts']) {
@@ -381,6 +387,7 @@ foreach ($problems as $problem) {
 		$time_text,
 		CSeverityHelper::makeSeverityCell($problem['severity']),
 		$status,
+		$recovery_time,
 		$problem['server_name'],
 		$host_list,
 		$problem_cell,

@@ -86,6 +86,19 @@ class ProblemHelper {
 				}
 				$event_info = self::getEventInfo($server, $items);
 				$actions_summary = self::getEventActionsSummary($server, $items);
+				$recovery_events = [];
+				$r_eventids = array_filter(array_map('intval', array_column($items, 'r_eventid')),
+					function (int $eventid): bool {
+						return $eventid > 0;
+					}
+				);
+				if ($r_eventids) {
+					$recovery_events = self::callApi($server, 'event.get', [
+						'output' => ['eventid', 'clock'],
+						'eventids' => array_values(array_unique($r_eventids)),
+						'preservekeys' => true
+					]);
+				}
 
 				$server_problems = [];
 				foreach ($items as $item) {
@@ -109,6 +122,15 @@ class ProblemHelper {
 					$actions = array_key_exists($eventid, $actions_summary)
 						? $actions_summary[$eventid]
 						: ['count' => 0, 'has_uncomplete' => false, 'has_failed' => false];
+					$r_eventid = (int) $item['r_eventid'];
+					$r_clock = 0;
+					if ($r_eventid > 0) {
+						$r_event_key = (string) $r_eventid;
+						if (array_key_exists($r_event_key, $recovery_events)
+								&& array_key_exists('clock', $recovery_events[$r_event_key])) {
+							$r_clock = (int) $recovery_events[$r_event_key]['clock'];
+						}
+					}
 
 					$server_problems[] = [
 						'eventid' => $eventid,
@@ -116,7 +138,8 @@ class ProblemHelper {
 						'severity' => (int) $item['severity'],
 						'name' => $item['name'],
 						'acknowledged' => (int) $item['acknowledged'],
-						'r_eventid' => (int) $item['r_eventid'],
+						'r_eventid' => $r_eventid,
+						'r_clock' => $r_clock,
 						'tags' => $item['tags'] ?? [],
 						'hosts' => $hosts,
 						'objectid' => $objectid,
