@@ -87,6 +87,18 @@ class ProblemHelper {
 				$event_info = self::getEventInfo($server, $items);
 				$actions_summary = self::getEventActionsSummary($server, $items);
 				$recovery_events = [];
+				$items_by_trigger = [];
+				$trigger_ids = array_filter(array_map('strval', array_column($items, 'objectid')));
+				if ($trigger_ids) {
+					$triggers = self::callApi($server, 'trigger.get', [
+						'output' => ['triggerid'],
+						'triggerids' => array_values(array_unique($trigger_ids)),
+						'selectItems' => ['itemid', 'name']
+					]);
+					foreach ($triggers as $trigger) {
+						$items_by_trigger[$trigger['triggerid']] = $trigger['items'] ?? [];
+					}
+				}
 				$r_eventids = array_filter(array_map('intval', array_column($items, 'r_eventid')),
 					function (int $eventid): bool {
 						return $eventid > 0;
@@ -122,6 +134,10 @@ class ProblemHelper {
 					$actions = array_key_exists($eventid, $actions_summary)
 						? $actions_summary[$eventid]
 						: ['count' => 0, 'has_uncomplete' => false, 'has_failed' => false];
+					$problem_items = [];
+					if ($objectid !== null && array_key_exists((string) $objectid, $items_by_trigger)) {
+						$problem_items = $items_by_trigger[(string) $objectid];
+					}
 					$r_eventid = (int) $item['r_eventid'];
 					$r_clock = 0;
 					if ($r_eventid > 0) {
@@ -140,6 +156,7 @@ class ProblemHelper {
 						'acknowledged' => (int) $item['acknowledged'],
 						'r_eventid' => $r_eventid,
 						'r_clock' => $r_clock,
+						'items' => $problem_items,
 						'tags' => $item['tags'] ?? [],
 						'hosts' => $hosts,
 						'objectid' => $objectid,

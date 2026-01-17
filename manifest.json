@@ -46,6 +46,11 @@
 			"view": "ticket.platform.trigger.popup",
 			"layout": "layout.json"
 		},
+		"ticket.platform.item.popup": {
+			"class": "TicketPlatformItemPopup",
+			"view": "ticket.platform.item.popup",
+			"layout": "layout.json"
+		},
 		"ticket.platform.host.popup": {
 			"class": "TicketPlatformHostPopup",
 			"view": "ticket.platform.host.popup",

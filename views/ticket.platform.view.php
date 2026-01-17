@@ -26,6 +26,8 @@
 
 $this->addJsFile('class.calendar.js');
 $this->addJsFile('gtlc.js');
+$this->addJsFile('items.js');
+$this->addJsFile('multilineinput.js');
 
 $filter = $data['filter'];
 $problems = $data['problems'];
@@ -366,21 +368,54 @@ foreach ($problems as $problem) {
 		$trigger_popup = 'javascript:ticketPlatformTriggerPopUp("'.$problem['objectid'].'","'
 			.$problem['server_id'].'");';
 
-		$problem_cell = (new CLinkAction($problem['name']))
-			->addClass(ZBX_STYLE_WORDBREAK)
-			->setMenuPopup([
+		$problem_link = (new CLinkAction($problem['name']))->addClass(ZBX_STYLE_WORDBREAK);
+
+		if ($problem['server_id'] === 'local') {
+			$problem_link->setMenuPopup(CMenuPopupHelper::getTrigger([
+				'triggerid' => $problem['objectid'],
+				'eventid' => $problem['eventid'],
+				'backurl' => $url->getUrl()
+			]));
+		}
+		else {
+			$item_links = [];
+			foreach ($problem['items'] ?? [] as $item) {
+				if (!array_key_exists('itemid', $item)) {
+					continue;
+				}
+				$item_links['javascript:ticketPlatformRemoteItemPopUp("'.$item['itemid'].'","'
+					.$problem['server_id'].'");'] = $item['name'] ?? $item['itemid'];
+			}
+			if (!$item_links) {
+				$item_links['javascript:void(0)'] = _('No items');
+			}
+
+			$problem_link->setMenuPopup([
 				'type' => 'submenu',
 				'data' => [
 					'submenu' => [
-						'main_section' => [
+						'view' => [
+							'label' => _('View'),
 							'items' => [
-								$problems_url => _('Problems'),
-								$trigger_popup => _('Trigger')
+								$problems_url => _('Problems')
+							]
+						],
+						'configuration' => [
+							'label' => _('Configuration'),
+							'items' => [
+								$trigger_popup => _('Trigger'),
+								'items' => [
+									'label' => _('Items'),
+									'items' => $item_links
+								]
 							]
 						]
 					]
 				]
 			]);
+		}
+
+		$problem_cell = $problem_link;
 	}
 
 	$row = [
@@ -432,6 +467,13 @@ $page
 		return PopUp("ticket.platform.trigger.popup",
 			{triggerid: triggerid, server_id: serverid},
 			{dialogue_class: "modal-popup-generic", trigger_element: trigger_element}
+		);
+	};
+
+	window.ticketPlatformRemoteItemPopUp = function(itemid, serverid, trigger_element) {
+		return PopUp("ticket.platform.item.popup",
+			{itemid: itemid, server_id: serverid},
+			{dialogue_class: "modal-popup-large", trigger_element: trigger_element}
 		);
 	};
 
@@ -497,6 +539,21 @@ $page
 		}, {once: true});
 		overlay.$dialogue[0].addEventListener("dialogue.close", function() {
 			history.replaceState({}, "", original_url);
+		}, {once: true});
+	};
+
+	window.view.editItem = function(target, data) {
+		clearMessages();
+
+		var overlay = PopUp("item.edit", data, {
+			dialogueid: "item-edit",
+			dialogue_class: "modal-popup-large",
+			trigger_element: target,
+			prevent_navigation: true
+		});
+
+		overlay.$dialogue[0].addEventListener("dialogue.submit", function() {
+			location.reload();
 		}, {once: true});
 	};
 '))->show();
