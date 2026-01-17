@@ -132,7 +132,9 @@ class TicketPlatformSettingsEdit extends CController {
 				'hostgroup' => $hostgroup,
 				'include_subgroups' => $include_subgroups,
 				'enabled' => $enabled,
-				'api_version' => $api_version
+				'api_version' => $api_version,
+				'connection_status' => 'ok',
+				'last_reached' => time()
 			];
 
 			$updated = false;
@@ -164,7 +166,9 @@ class TicketPlatformSettingsEdit extends CController {
 			'hostgroup' => '',
 			'include_subgroups' => 1,
 			'enabled' => 1,
-			'api_version' => ''
+			'api_version' => '',
+			'connection_status' => '',
+			'last_reached' => 0
 		];
 
 		foreach ($config['servers'] as $existing) {

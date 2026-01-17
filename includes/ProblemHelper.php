@@ -37,20 +37,6 @@ class ProblemHelper {
 				continue;
 			}
 
-			if (empty($server['is_local'])) {
-				$api_version = RemoteApi::callNoAuth($server['api_url'], 'apiinfo.version', []);
-				if (is_string($api_version) && $api_version !== '') {
-					if (!array_key_exists('api_version', $server) || $server['api_version'] !== $api_version) {
-						self::updateServerVersion($server['id'], $api_version);
-					}
-					$server['api_version'] = $api_version;
-				}
-				RemoteApi::call($server['api_url'], $server['api_token'], 'user.get', [
-					'output' => ['userid', 'username', 'roleid', 'status'],
-					'limit' => 1
-				]);
-			}
-
 			$cache_key = Cache::makeKey([
 				'filter' => $filter,
 				'server' => [
@@ -68,6 +54,22 @@ class ProblemHelper {
 			}
 
 			try {
+				$api_version = '';
+				if (empty($server['is_local'])) {
+					$api_version = RemoteApi::callNoAuth($server['api_url'], 'apiinfo.version', []);
+					if (!is_string($api_version) || $api_version === '') {
+						throw new Exception(_('Invalid API version response.'));
+					}
+					RemoteApi::call($server['api_url'], $server['api_token'], 'user.get', [
+						'output' => ['userid', 'username', 'roleid', 'status'],
+						'limit' => 1
+					]);
+					if (!array_key_exists('api_version', $server) || $server['api_version'] !== $api_version) {
+						self::updateServerMeta($server['id'], ['api_version' => $api_version], true);
+					}
+					$server['api_version'] = $api_version;
+				}
+
 				$groupids = self::resolveGroupIds($server);
 				$hostids = self::resolveHostIds($server, $filter['host']);
 				if ($filter['host'] !== '' && !$hostids) {
@@ -127,10 +129,31 @@ class ProblemHelper {
 					];
 				}
 
+				if (empty($server['is_local'])) {
+					self::updateServerMeta($server['id'], [
+						'connection_status' => 'ok',
+						'last_reached' => time(),
+						'api_version' => $server['api_version'] ?? ''
+					], true);
+				}
+
+				$cache_key = Cache::makeKey([
+					'filter' => $filter,
+					'server' => [
+						'id' => $server['id'],
+						'hostgroup' => $server['hostgroup'],
+						'include_subgroups' => $server['include_subgroups'],
+						'api_version' => $server['api_version'] ?? ''
+					]
+				]);
+
 				Cache::set($server['id'], $cache_key, $server_problems);
 				$problems = array_merge($problems, $server_problems);
 			}
 			catch (Exception $e) {
+				if (empty($server['is_local'])) {
+					self::updateServerMeta($server['id'], ['connection_status' => 'problem'], false);
+				}
 				$errors[] = [
 					'server' => $server['name'],
 					'error' => $e->getMessage()
@@ -447,15 +470,20 @@ class ProblemHelper {
 		return RemoteApi::call($server['api_url'], $server['api_token'], $method, $params);
 	}
 
-	private static function updateServerVersion(string $server_id, string $api_version): void {
+	private static function updateServerMeta(string $server_id, array $updates, bool $clear_cache_on_version_change): void {
 		$config = Config::get();
 		$updated = false;
 		foreach ($config['servers'] as $index => $server) {
 			if ($server['id'] === $server_id) {
 				$current_version = $server['api_version'] ?? '';
-				if ($current_version !== $api_version) {
-					$config['servers'][$index]['api_version'] = $api_version;
-					$updated = true;
+				foreach ($updates as $key => $value) {
+					$config['servers'][$index][$key] = $value;
+				}
+				$updated = true;
+				if ($clear_cache_on_version_change
+						&& array_key_exists('api_version', $updates)
+						&& $updates['api_version'] !== ''
+						&& $updates['api_version'] !== $current_version) {
 					Cache::clearServer($server_id);
 				}
 				break;
