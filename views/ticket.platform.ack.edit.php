@@ -19,6 +19,37 @@
  * @var CView $this
  */
 
+$data += [
+	'eventids' => [],
+	'server_id' => '',
+	'problem_name' => '',
+	'message' => '',
+	'scope' => ZBX_ACKNOWLEDGE_SELECTED,
+	'change_severity' => ZBX_PROBLEM_UPDATE_NONE,
+	'severity' => TRIGGER_SEVERITY_NOT_CLASSIFIED,
+	'suppress_problem' => ZBX_PROBLEM_UPDATE_NONE,
+	'unsuppress_problem' => ZBX_PROBLEM_UPDATE_NONE,
+	'close_problem' => ZBX_PROBLEM_UPDATE_NONE,
+	'related_problems_count' => 0,
+	'problem_can_be_suppressed' => false,
+	'problem_can_be_unsuppressed' => false,
+	'problem_can_be_closed' => false,
+	'problem_severity_can_be_changed' => false,
+	'problem_can_change_rank' => false,
+	'allowed_add_comments' => false,
+	'allowed_change_severity' => false,
+	'allowed_suppress' => false,
+	'allowed_acknowledge' => false,
+	'allowed_change_problem_ranking' => false,
+	'allowed_close' => false,
+	'has_unack_events' => false,
+	'has_ack_events' => false,
+	'suppress_until_problem' => 'now+1d',
+	'errors' => null,
+	'title' => _('Update problem'),
+	'user' => ['debug_mode' => GROUP_DEBUG_MODE_DISABLED]
+];
+
 $form = (new CForm())
 	->setId('acknowledge_form')
 	->addVar('action', 'ticket.platform.ack.create')
@@ -32,7 +63,7 @@ $form_list = (new CFormList())
 		(new CTextArea('message', $data['message']))
 			->setWidth(ZBX_TEXTAREA_BIG_WIDTH)
 			->setAttribute('maxlength', DB::getFieldLength('acknowledges', 'message'))
-			->setEnabled($data['allowed_add_comments'])
+			->setEnabled((bool) ($data['allowed_add_comments'] ?? false))
 	);
 
 $selected_events = count($data['eventids']);

@@ -115,13 +115,13 @@ foreach ($data['servers'] as $server) {
 	]);
 }
 
-$add_button = new CLink(_('Add server'), (new CUrl('zabbix.php'))
+$add_button = (new CLink(_('Add server'), (new CUrl('zabbix.php'))
 	->setArgument('action', 'ticket.platform.settings.edit')
-);
+))
+	->addClass(ZBX_STYLE_BTN);
 
 (new CHtmlPage())
 	->setTitle(_('Ticket Platform settings'))
-	->addItem(new CTag('h1', true, _('Ticket Platform settings')))
 	->addItem(
 		$data['message_type'] !== null && $data['message'] !== null
 			? makeMessageBox(
@@ -135,6 +135,6 @@ $add_button = new CLink(_('Add server'), (new CUrl('zabbix.php'))
 			: null
 	)
 	->addItem($settings_form)
-	->addItem((new CDiv())->addItem($add_button))
 	->addItem($servers_table)
+	->addItem((new CDiv())->addItem($add_button))
 	->show();

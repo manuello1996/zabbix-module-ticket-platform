@@ -63,7 +63,7 @@ $form->addItem($form_list);
 $form->addItem((new CSubmitButton(_('Save')))->setName('save'));
 $form->addItem(
 	(new CLink(_('Cancel'), (new CUrl('zabbix.php'))->setArgument('action', 'ticket.platform.settings')))
-		->addClass(ZBX_STYLE_BTN_ALT)
+		->addClass(ZBX_STYLE_COLOR_NEGATIVE)
 );
 
 $page = (new CHtmlPage())

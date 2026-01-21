@@ -186,6 +186,10 @@ $page->show();
 
 (new CScriptTag('
 	window.ticketPlatformAcknowledgePopUp = function(parameters, trigger_element) {
+		if (parameters.server_id === "local" || parameters.server_id === undefined || parameters.server_id === null) {
+			return acknowledgePopUp({eventids: parameters.eventids}, trigger_element);
+		}
+
 		return PopUp("ticket.platform.ack.edit", parameters,
 			{dialogue_class: "modal-popup-generic", trigger_element: trigger_element}
 		);
